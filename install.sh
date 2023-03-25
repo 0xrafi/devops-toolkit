@@ -11,11 +11,11 @@ fi
 
 TARGET_DIR="/usr/local/bin"
 
-FOLDERS=("Automation" "Deployment" "Monitoring" "Project Management" "Misc")
+FOLDERS=("automation" "deployment" "monitoring" "project_management" "misc")
 
 for folder in "${FOLDERS[@]}"; do
   if [ -d "${SCRIPTS_DIR}/${folder}" ]; then
-    for script in "${SCRIPTS_DIR}/${folder}"/*; do
+    for script in "${SCRIPTS_DIR}/${folder}"/*.sh; do
       if [[ ! -d "$script" ]]; then
         chmod +x "$script"
         script_name=$(basename "$script")

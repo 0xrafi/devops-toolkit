@@ -4,7 +4,7 @@ Hey there! 👋 Welcome to my DevOps-Toolkit. I'm just starting out with this re
 
 ## Categories
 
-For now, I've added a script for automating the SSH connection to my remote server via a Raspberry Pi jump host. As I create more scripts, I'll organize them into the following categories:
+For now, I've added a script for automating the SSH connection to my remote server via a Raspberry Pi jump host and another for quickly updating project dependencies. As I create more scripts, I'll organize them into the following categories:
 
 - **Deployment**: Tools for automating the deployment process for my projects.
 - **Automation**: Scripts that make my life easier by automating tasks like environment setup and backups.
@@ -12,7 +12,7 @@ For now, I've added a script for automating the SSH connection to my remote serv
 - **Project Management**: Tools that help me manage tasks, code snippets, and boilerplates.
 - **Misc**: Other useful scripts that don't fit into the main categories but have made a difference in my workflow.
 
-Feel free to explore the `Automation` folder and follow the usage instructions provided in the `README.md` file.
+Feel free to explore and follow the usage instructions provided in each `README.md` file.
 ## Installation
 
 To make the `devops-toolkit` scripts easily accessible from your terminal, run the provided `install.sh` script. This script creates symbolic links for all executable scripts in the `/usr/local/bin` directory, allowing you to run the scripts by their name from any location.

@@ -6,7 +6,11 @@ In this folder, I've collected some scripts that help me manage my projects more
 
 ### Auto-sync GitHub Repositories (`auto_sync_repos.sh`)
 
-This script automates the process of syncing your local GitHub repositories with their remote counterparts. It allows you to either update all repositories at once or choose individual repositories to update. It fetches changes from the remote repositories and merges them using a fast-forward merge strategy.
+Automates the process of syncing local GitHub repos with their remote counterparts, allowing you to update all repos at once or choose individual repos to update; fetches changes from the remote repos and merges them using a fast-forward merge strategy.
+
+### Create PR (`create_pr.sh`)
+
+Pushes your local feature branch and creates a PR on main, opening up a window in your browser. Only works on Github.
 
 #### Usage
 
