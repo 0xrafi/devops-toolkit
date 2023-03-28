@@ -10,7 +10,7 @@ MAC_ADDRESS="${MAC_ADDRESS}"
 is_server_up() {
   server_ip=$1
 
-  if ! ping -c 1 -W 1 $server_ip >/dev/null 2>&1; then
+  if ! ping -c 3 -W 3 $server_ip >/dev/null 2>&1; then
     return 1
   else
     return 0
@@ -25,13 +25,19 @@ wake_server() {
   sudo etherwake -i eth0 $mac_address
 
   echo "Waiting for server to wake up..."
+
+  initial_wait_time=20
+  subsequent_wait_time=5
+
+  sleep $initial_wait_time
+
   while true; do
     if ssh -q -o "ConnectTimeout=5" -o "StrictHostKeyChecking=no" "${server_connection}" "exit" 2>/dev/null; then
       echo "Server is up!"
       break
     else
-      echo "Server is still starting up, retrying in 5 seconds..."
-      sleep 5
+      echo "Server is still starting up, retrying in $subsequent_wait_time seconds..."
+      sleep $subsequent_wait_time
     fi
   done
 }
@@ -57,13 +63,22 @@ prompt_for_tunnel() {
   read -p "Would you like to tunnel? [y/N]: " tunnel
 
   if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    read -p "Specify the port to tunnel (default: 9090): " port
-    port=${port:-9090}
+    while true; do
+      read -p "Specify the port to tunnel (default: 9090): " port
+      port=${port:-9090}
+      if ! [[ $port =~ ^[0-9]+$ ]]; then
+        echo "Error: Port must be a number. Please try again."
+      else
+        break
+      fi
+    done
   else
     port=0
   fi
+
   echo "$tunnel,$port"
 }
+
 
 main() {
   server_connection="${SERVER_USER}@${SERVER_IP}"
@@ -76,7 +91,7 @@ main() {
     ssh -f -N -L $port:localhost:$port "${REMOTE_USER}@${REMOTE_HOST}"
   fi
 
-  if ! ssh -t "${REMOTE_USER}@${REMOTE_HOST}" "$(declare -f is_server_up); is_server_up '$server_connection'" >/dev/null 2>&1; then
+  if ! ssh -t "${REMOTE_USER}@${REMOTE_HOST}" "$(declare -f is_server_up); is_server_up '$SERVER_IP'" >/dev/null 2>&1; then
     echo "Server is not up. Attempting to wake it up."
     ssh -t "${REMOTE_USER}@${REMOTE_HOST}" "$(declare -f wake_server); wake_server '$server_connection' $MAC_ADDRESS"
   else
@@ -92,6 +107,11 @@ main() {
     ssh -t "${REMOTE_USER}@${REMOTE_HOST}" "$(declare -f remote_shutdown); remote_shutdown '$server_connection'"
   else
     echo "Not shutting down the server. Exiting."
+    if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      echo "Killing the process that is listening on port $port..."
+      sudo fuser -k -n tcp $port
+    fi
+
   fi
 
 }
