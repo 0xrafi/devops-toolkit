@@ -95,3 +95,5 @@ main() {
   fi
 
 }
+
+main
