@@ -7,7 +7,7 @@ Hey there! 👋 Welcome to my DevOps-Toolkit, a collection of practical and effe
 - **Automation**: Automating tasks like environment setup and backups.
 - **Monitoring**: Tools to keep an eye on system performance and resources.
 - **Project Management**: Manage tasks, code snippets, and boilerplates.
-- **Misc**: Other useful scripts that don't fit into the main categories but have made a difference in my workflow.
+- **Misc**: Other scripts (esp ML, ChatGPT, OpenAI stuff).
 
 There are usage instructions provided in each `README.md` file.
 ## Installation
