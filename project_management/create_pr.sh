@@ -11,11 +11,13 @@ if [ -z "$remote_url" ]; then
     exit 1
 fi
 
-upstream_url=$(git config --get remote.origin.upstream)
+upstream_url=$(git config --get remote.upstream.url)
 
 if [ -z "$upstream_url" ]; then
-    echo "No remote origin upstream found. Setting it now."
+    echo "No remote upstream found. Setting it now."
     git remote add upstream $remote_url
+    git fetch upstream
+    git branch --set-upstream-to=upstream/$current_branch $current_branch
 fi
 
 user_and_repo=$(echo $remote_url | sed -E 's/.*github.com[:\/]//g' | sed 's/\.git$//g')
