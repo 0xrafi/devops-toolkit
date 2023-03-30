@@ -11,6 +11,13 @@ if [ -z "$remote_url" ]; then
     exit 1
 fi
 
+upstream_url=$(git config --get remote.origin.upstream)
+
+if [ -z "$upstream_url" ]; then
+    echo "No remote origin upstream found. Setting it now."
+    git remote add upstream $remote_url
+fi
+
 user_and_repo=$(echo $remote_url | sed -E 's/.*github.com[:\/]//g' | sed 's/\.git$//g')
 
 pr_url="https://github.com/$user_and_repo/compare/main...$current_branch?expand=1"
