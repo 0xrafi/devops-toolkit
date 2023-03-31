@@ -1,25 +1,57 @@
 #!/bin/bash
 
-current_branch=$(git symbolic-ref --short HEAD)
+function get_current_branch() {
+    git symbolic-ref --short HEAD
+}
 
-git push origin $current_branch
+function push_current_branch() {
+    local current_branch=$1
+    git push origin $current_branch
+}
 
-remote_url=$(git config --get remote.origin.url)
+function get_remote_url() {
+    git config --get remote.origin.url
+}
 
-if [ -z "$remote_url" ]; then
-    echo "Error: No remote URL found. Please set up a remote repo on Github and try again."
-    exit 1
-fi
+function set_upstream_if_not_exists() {
+    local current_branch=$1
+    local remote_url=$2
 
-upstream_url=$(git config --get remote.origin.upstream)
+    if [ -z "$(git config --get remote.origin.upstream)" ]; then
+        echo "No remote origin upstream found. Setting it now."
+        git remote add upstream $remote_url
+        git fetch upstream
+        git branch --set-upstream-to=upstream/$current_branch $current_branch
+    fi
+}
 
-if [ -z "$upstream_url" ]; then
-    echo "No remote origin upstream found. Setting it now."
-    git remote add upstream $remote_url
-fi
+function get_user_and_repo() {
+    local remote_url=$1
+    echo $remote_url | sed -E 's/.*github.com[:\/]//g' | sed 's/\.git$//g'
+}
 
-user_and_repo=$(echo $remote_url | sed -E 's/.*github.com[:\/]//g' | sed 's/\.git$//g')
+function open_pull_request() {
+    local user_and_repo=$1
+    local current_branch=$2
+    local pr_url="https://github.com/$user_and_repo/compare/main...$current_branch?expand=1"
+    open $pr_url
+}
 
-pr_url="https://github.com/$user_and_repo/compare/main...$current_branch?expand=1"
+main() {
+    local current_branch=$(get_current_branch)
+    push_current_branch $current_branch
 
-open $pr_url
+    local remote_url=$(get_remote_url)
+
+    if [ -z "$remote_url" ]; then
+        echo "Error: No remote URL found. Please set up a remote repo on Github and try again."
+        exit 1
+    fi
+
+    set_upstream_if_not_exists $current_branch $remote_url
+
+    local user_and_repo=$(get_user_and_repo $remote_url)
+    open_pull_request $user_and_repo $current_branch
+}
+
+main
