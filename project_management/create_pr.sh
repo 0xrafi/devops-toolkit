@@ -13,6 +13,20 @@ function get_remote_url() {
     git config --get remote.origin.url
 }
 
+function validate_remote_url() {
+    local remote_url=$1
+
+    if [ -z "$remote_url" ]; then
+        echo "Error: No remote URL found. Please set up a remote repo on Github and try again."
+        exit 1
+    fi
+
+    if [[ ! $remote_url =~ ^https:\/\/github\.com\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+\.git$ ]]; then
+        echo "Error: Invalid remote URL. Please set up a valid remote repo on Github and try again."
+        exit 1
+    fi
+}
+
 function set_upstream_if_not_exists() {
     local current_branch=$1
     local remote_url=$2
@@ -42,11 +56,7 @@ main() {
     push_current_branch $current_branch
 
     local remote_url=$(get_remote_url)
-
-    if [ -z "$remote_url" ]; then
-        echo "Error: No remote URL found. Please set up a remote repo on Github and try again."
-        exit 1
-    fi
+    validate_remote_url $remote_url
 
     set_upstream_if_not_exists $current_branch $remote_url
 
