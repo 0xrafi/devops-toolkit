@@ -109,7 +109,7 @@ main() {
     echo "Not shutting down the server. Exiting."
     if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
       echo "Killing the process that is listening on port $port..."
-      sudo fuser -k -n tcp $port
+      sudo kill $(sudo lsof -t -i:$port)
     fi
 
   fi
