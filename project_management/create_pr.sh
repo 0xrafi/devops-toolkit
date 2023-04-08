@@ -6,7 +6,7 @@ function get_current_branch() {
 
 function push_current_branch() {
     local current_branch=$1
-    git push origin $current_branch
+    git push -u origin $current_branch
 }
 
 function get_remote_url() {
@@ -27,18 +27,6 @@ function validate_remote_url() {
     fi
 }
 
-function set_upstream_if_not_exists() {
-    local current_branch=$1
-    local remote_url=$2
-
-    if [ -z "$(git config --get remote.origin.upstream)" ]; then
-        echo "No remote origin upstream found. Setting it now."
-        git remote add upstream $remote_url
-        git fetch upstream
-        git branch --set-upstream-to=upstream/$current_branch $current_branch
-    fi
-}
-
 function get_user_and_repo() {
     local remote_url=$1
     echo $remote_url | sed -E 's/.*github.com[:\/]//g' | sed 's/\.git$//g'
@@ -52,13 +40,11 @@ function open_pull_request() {
 }
 
 main() {
-    local current_branch=$(get_current_branch)
-    push_current_branch $current_branch
-
     local remote_url=$(get_remote_url)
     validate_remote_url $remote_url
 
-    set_upstream_if_not_exists $current_branch $remote_url
+    local current_branch=$(get_current_branch)
+    push_current_branch $current_branch
 
     local user_and_repo=$(get_user_and_repo $remote_url)
     open_pull_request $user_and_repo $current_branch
