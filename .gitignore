@@ -1,0 +1,25 @@
+# .gitignore for devops-toolkit
+
+# macOS
+.DS_Store
+
+# Visual Studio Code
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+*.log
+*.so
+*.dylib
+
+# Shell scripts
+*.log
+*.swp
+*.bak
+*.tmp

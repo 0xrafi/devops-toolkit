@@ -56,7 +56,7 @@ connect_to_server() {
 
 remote_shutdown() {
   server_connection=$1
-  ssh "${server_connection}" "sudo shutdown now"
+  ssh -A -t "${server_connection}" "sudo shutdown now"
 }
 
 prompt_for_tunnel() {
@@ -104,12 +104,12 @@ main() {
   read -p "Do you want to shut down the server? (y/n): " shutdown_choice
   if [ "$shutdown_choice" == "y" ]; then
     echo "Shutting down server..."
-    ssh -t "${REMOTE_USER}@${REMOTE_HOST}" "$(declare -f remote_shutdown); remote_shutdown '$server_connection'"
+    ssh -A -t "${REMOTE_USER}@${REMOTE_HOST}" "$(declare -f remote_shutdown); remote_shutdown '$server_connection'"
   else
     echo "Not shutting down the server. Exiting."
     if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
       echo "Killing the process that is listening on port $port..."
-      sudo fuser -k -n tcp $port
+      sudo kill $(sudo lsof -t -i:$port)
     fi
 
   fi
