@@ -1,24 +1,28 @@
 import os
 
-def split_text(input_file, output_folder, output_prefix, chunk_size):
-    with open(input_file, "r") as f:
-        text = f.read()
-    
-    num_chunks = len(text) // chunk_size + (1 if len(text) % chunk_size > 0 else 0)
-    
+def split_text(input_file, output_folder, output_prefix, token_limit):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
-    for i in range(num_chunks):
-        start = i * chunk_size
-        end = (i + 1) * chunk_size
-        chunk = text[start:end]
-        with open(os.path.join(output_folder, f"{output_prefix}_{i + 1}.txt"), "w") as f:
-            f.write(chunk)
+    words = []
+    chunk_count = 1
+    with open(input_file, "r") as f:
+        for line in f:
+            words.extend(line.split())
+            while len(words) >= token_limit:
+                chunk = " ".join(words[:token_limit])
+                with open(os.path.join(output_folder, f"{output_prefix}_{chunk_count}.txt"), "w") as chunk_file:
+                    chunk_file.write(chunk)
+                words = words[token_limit:]
+                chunk_count += 1
+        if words:
+            chunk = " ".join(words)
+            with open(os.path.join(output_folder, f"{output_prefix}_{chunk_count}.txt"), "w") as chunk_file:
+                chunk_file.write(chunk)
 
 # Usage:
-input_file = "/Users/rafi/Projects/devops-toolkit/misc/pr_to_review.txt"
-output_folder = "chunks"
+input_file = "/Users/rafi/Projects/devops-toolkit/misc/text.txt"
+output_folder = "/Users/rafi/Projects/devops-toolkit/misc/chunks"
 output_prefix = "chunk"
-chunk_size = 1200
-split_text(input_file, output_folder, output_prefix, chunk_size)
+token_limit = 300
+split_text(input_file, output_folder, output_prefix, token_limit)
