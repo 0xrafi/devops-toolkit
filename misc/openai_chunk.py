@@ -6,6 +6,8 @@ import json
 # Load your API key from an environment variable or a configuration file
 openai.api_key = "your_openai_api_key"
 
+# replace with 
+
 def process_chunk_with_chatgpt(chunk):
     response = openai.Completion.create(
         engine="chatgpt-2023",
