@@ -8,3 +8,7 @@ Python script that wraps around OpenAI's ChatGPT API and adds some extra context
 
 Breaks down text from hardcoded file into chunks of equal characters (for use with ChatGPT).
 
+### Open AI Chunker
+
+Breaks down text from hardcoded file and assembles it into a query with Open AI.
+

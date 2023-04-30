@@ -8,5 +8,3 @@ This script automates the process of connecting to my remote Manjaro server via 
 
 - `etherwake`: Required for sending Wake-on-LAN signals. Install on the jump host if not already present.
 
-
-
