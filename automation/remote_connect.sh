@@ -103,7 +103,7 @@ main() {
 
   if ! ssh -t "${remote_user}@${remote_host}" "$(declare -f is_server_online); is_server_online '$server_ip'" >/dev/null 2>&1; then
     echo "Server is not up. Attempting to wake it up."
-    ssh -t "${remote_user}@${remote_host}" "$(declare -f up_); up_ '$server_connection' $mac_address"
+    ssh -t "${remote_user}@${remote_host}" "$(declare -f wake_up_server); wake_up_server '$server_connection' $mac_address"
   else
     echo "Server is already up!"
   fi
