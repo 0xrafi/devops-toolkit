@@ -16,7 +16,7 @@ To make the `devops-toolkit` scripts easily accessible from your terminal, run t
 
 1. Clone the repository: `git clone https://github.com/your-username/devops-toolkit.git`
 2. Change to the `devops-toolkit` directory: `cd devops-toolkit`
-3. Run the `install.sh` script: `. ./install.sh`
+3. Run the `install.sh` script: `sudo ./install.sh`
 
 Now you can run any script by its name from your terminal. The `install.sh` script will also ensure that all the scripts are marked as executable.
 
