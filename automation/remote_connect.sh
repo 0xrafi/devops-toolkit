@@ -13,7 +13,6 @@ mac_address="${MAC_ADDRESS}"
 
 is_server_online() {
   server_ip=$1
-
   if ! ping -c 3 -W 3 $server_ip >/dev/null 2>&1; then
     return 1
   else
@@ -38,6 +37,8 @@ wake_up_server() {
       break
     else
       echo "Server is still starting up, retrying in $SUBSEQUENT_WAIT_TIME seconds..."
+      echo "INITIAL_WAIT_TIME is set to: $INITIAL_WAIT_TIME"
+      echo "SUBSEQUENT_WAIT_TIME is set to: $SUBSEQUENT_WAIT_TIME"
       sleep $SUBSEQUENT_WAIT_TIME
     fi
   done
@@ -60,9 +61,19 @@ initiate_remote_shutdown() {
   ssh -A -t "${server_connection}" "sudo shutdown now"
 }
 
+
+
+establish_ssh_tunnel() {
+  local tunnel=$1
+  local port=$2
+  if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    log_info "Creating SSH tunnel to remote jump host..."
+    ssh -f -N -L $port:localhost:$port "${remote_user}@${remote_host}"
+  fi
+}
+
 prompt_tunnel_config() {
   read -p "Would you like to tunnel? [y/N]: " tunnel
-
   if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     while true; do
       read -p "Specify the port to tunnel (default: 9090): " port
@@ -76,18 +87,7 @@ prompt_tunnel_config() {
   else
     port=0
   fi
-
   echo "$tunnel,$port"
-}
-
-establish_ssh_tunnel() {
-  local tunnel=$1
-  local port=$2
-
-  if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    log_info "Creating SSH tunnel to remote jump host..."
-    ssh -f -N -L $port:localhost:$port "${remote_user}@${remote_host}"
-  fi
 }
 
 main() {
