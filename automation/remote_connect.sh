@@ -1,15 +1,23 @@
 #!/bin/bash
 
+#### NOTES, Dec 2023
+# Am learning about 'ProxyJump' SSH config,
+# which removes the need for complex command
+# chaining and remote function execution
+
+
 # constants
 readonly INITIAL_WAIT_TIME=20
 readonly SUBSEQUENT_WAIT_TIME=5
 
 # Set variables from environment or use default values
-remote_user="${REMOTE_USER}"
-remote_host="${REMOTE_HOST}"
+# these are both the same
+remote_user="${REMOTE_USER}" 
 server_user="${SERVER_USER}"
-server_ip="${SERVER_IP}"
-mac_address="${MAC_ADDRESS}"
+ 
+remote_host="${REMOTE_HOST}" # remote host is duck DNS RPi
+server_ip="${SERVER_IP}" # local IP of Manjaro server
+mac_address="${MAC_ADDRESS}" # local Mac address of Manjaro server
 
 is_server_online() {
   server_ip=$1
@@ -61,8 +69,6 @@ initiate_remote_shutdown() {
   ssh -A -t "${server_connection}" "sudo shutdown now"
 }
 
-
-
 establish_ssh_tunnel() {
   local tunnel=$1
   local port=$2
@@ -96,10 +102,7 @@ main() {
   tunnel="${tunnel_and_port[0]}"
   port="${tunnel_and_port[1]}"
 
-  if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    echo "Creating SSH tunnel to remote jump host..."
-    ssh -f -N -L $port:localhost:$port "${remote_user}@${remote_host}"
-  fi
+  establish_ssh_tunnel "${tunnel}" "${port}"
 
   if ! ssh -t "${remote_user}@${remote_host}" "$(declare -f is_server_online); is_server_online '$server_ip'" >/dev/null 2>&1; then
     echo "Server is not up. Attempting to wake it up."
