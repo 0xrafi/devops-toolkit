@@ -18,9 +18,9 @@ server_user="${SERVER_USER}"
 remote_host="${REMOTE_HOST}" # remote host is duck DNS RPi
 server_ip="${SERVER_IP}" # local IP of Manjaro server
 mac_address="${MAC_ADDRESS}" # local Mac address of Manjaro server
+server_connection="${server_user}@${server_ip}"
 
 is_server_online() {
-  server_ip=$1
   if ! ping -c 3 -W 3 $server_ip >/dev/null 2>&1; then
     return 1
   else
@@ -28,12 +28,18 @@ is_server_online() {
   fi
 }
 
-wake_up_server() {
-  server_connection=$1
-  mac_address=$2
+is_yes_response() {
+  local response=$1
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    return 0  # Success, response is 'yes'
+  else
+    return 1  # Failure, response is not 'yes'
+  fi
+}
 
+wake_up_server() {
   echo "Sending Wake on LAN signal to server..."
-  sudo etherwake -i eth0 $mac_address
+  ssh "${remote_user}@${remote_host}" "sudo etherwake -i eth0 ${mac_address}"
 
   echo "Waiting for server to wake up..."
 
@@ -45,34 +51,31 @@ wake_up_server() {
       break
     else
       echo "Server is still starting up, retrying in $SUBSEQUENT_WAIT_TIME seconds..."
-      echo "INITIAL_WAIT_TIME is set to: $INITIAL_WAIT_TIME"
-      echo "SUBSEQUENT_WAIT_TIME is set to: $SUBSEQUENT_WAIT_TIME"
       sleep $SUBSEQUENT_WAIT_TIME
     fi
   done
 }
 
 establish_server_connection() {
-  server_connection=$1
-  tunnel=$2
-  port=$3
-
-  if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    ssh -L $port:localhost:$port "${server_connection}"
+  tunnel=$1
+  port=$2
+  if is_yes_response "$tunnel"; then
+    ssh -f -N -L $port:localhost:$port "${server_connection}"
   else
+    echo "Connecting to Manjaro Linux server..."
     ssh "${server_connection}"
   fi
 }
 
 initiate_remote_shutdown() {
-  server_connection=$1
+  echo "Initiating shutdown of the server..."
   ssh -A -t "${server_connection}" "sudo shutdown now"
 }
 
 establish_ssh_tunnel() {
   local tunnel=$1
   local port=$2
-  if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  if is_yes_response "$tunnel"; then
     log_info "Creating SSH tunnel to remote jump host..."
     ssh -f -N -L $port:localhost:$port "${remote_user}@${remote_host}"
   fi
@@ -80,7 +83,7 @@ establish_ssh_tunnel() {
 
 prompt_tunnel_config() {
   read -p "Would you like to tunnel? [y/N]: " tunnel
-  if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  if is_yes_response "$tunnel"; then
     while true; do
       read -p "Specify the port to tunnel (default: 9090): " port
       port=${port:-9090}
@@ -96,35 +99,35 @@ prompt_tunnel_config() {
   echo "$tunnel,$port"
 }
 
+handle_ssh_tunnel_setup() {
+  
+}
+
 main() {
-  server_connection="${server_user}@${server_ip}"
   IFS=',' read -ra tunnel_and_port <<<"$(prompt_tunnel_config)"
   tunnel="${tunnel_and_port[0]}"
   port="${tunnel_and_port[1]}"
 
   establish_ssh_tunnel "${tunnel}" "${port}"
 
-  if ! ssh -t "${remote_user}@${remote_host}" "$(declare -f is_server_online); is_server_online '$server_ip'" >/dev/null 2>&1; then
+  if ! is_server_online; then
     echo "Server is not up. Attempting to wake it up."
-    ssh -t "${remote_user}@${remote_host}" "$(declare -f wake_up_server); wake_up_server '$server_connection' $mac_address"
+    wake_up_server
   else
     echo "Server is already up!"
   fi
 
-  echo "Connecting to Manjaro Linux server..."
-  ssh -t "${remote_user}@${remote_host}" "$(declare -f establish_server_connection); establish_server_connection '$server_connection' '$tunnel' $port"
+  establish_server_connection "${tunnel}" "${port}"
 
   read -p "Do you want to shut down the server? (y/n): " shutdown_choice
-  if [ "$shutdown_choice" == "y" ]; then
-    echo "Shutting down server..."
-    echo "Enter password for remote:"
-    ssh -A -t "${remote_user}@${remote_host}" "$(declare -f initiate_remote_shutdown); initiate_remote_shutdown '$server_connection'"
-    echo "Initiated shutdown."
+  if is_yes_response "$shutdown_choice"; then
+    echo "You may be prompted to enter the remote server's password for 'sudo' access."
+    initiate_remote_shutdown
   else
     echo "Not shutting down the server. Exiting."
   fi
 
-  if [[ "$tunnel" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  if is_yes_response "$tunnel"; then
     echo "Killing the process locally that is listening on port $port..."
     echo "Enter password for local machine:"
     sudo kill $(sudo lsof -t -i:$port)
