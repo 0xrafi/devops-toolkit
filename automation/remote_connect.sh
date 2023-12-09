@@ -5,7 +5,6 @@
 # which removes the need for complex command
 # chaining and remote function execution
 
-
 # constants
 readonly INITIAL_WAIT_TIME=20
 readonly SUBSEQUENT_WAIT_TIME=5
@@ -18,10 +17,11 @@ server_user="${SERVER_USER}"
 remote_host="${REMOTE_HOST}" # remote host is duck DNS RPi
 server_ip="${SERVER_IP}" # local IP of Manjaro server
 mac_address="${MAC_ADDRESS}" # local Mac address of Manjaro server
+# jump_connection="${remote_user}@${remote_host}"
 server_connection="${server_user}@${server_ip}"
 
 is_server_online() {
-  if ! ping -c 3 -W 3 $server_ip >/dev/null 2>&1; then
+    if ssh -q "${remote_user}@${remote_host}" "ping -c 3 -W 3 $server_ip" >/dev/null 2>&1; then
     return 1
   else
     return 0
@@ -100,15 +100,20 @@ prompt_tunnel_config() {
 }
 
 handle_ssh_tunnel_setup() {
-  
-}
-
-main() {
   IFS=',' read -ra tunnel_and_port <<<"$(prompt_tunnel_config)"
   tunnel="${tunnel_and_port[0]}"
   port="${tunnel_and_port[1]}"
 
   establish_ssh_tunnel "${tunnel}" "${port}"
+}
+
+check_and_wake_server() {
+  
+}
+
+main() {
+
+  handle_ssh_tunnel_setup
 
   if ! is_server_online; then
     echo "Server is not up. Attempting to wake it up."
