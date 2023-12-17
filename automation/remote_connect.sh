@@ -22,18 +22,18 @@ server_connection="${server_user}@${server_ip}"
 
 is_server_online() {
     if ssh -q "${remote_user}@${remote_host}" "ping -c 3 -W 3 $server_ip" >/dev/null 2>&1; then
-    return 1
-  else
     return 0
+  else
+    return 1
   fi
 }
 
 is_yes_response() {
   local response=$1
   if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    return 0  # Success, response is 'yes'
+    return 0
   else
-    return 1  # Failure, response is not 'yes'
+    return 1
   fi
 }
 
@@ -108,19 +108,19 @@ handle_ssh_tunnel_setup() {
 }
 
 check_and_wake_server() {
-  
-}
-
-main() {
-
-  handle_ssh_tunnel_setup
-
   if ! is_server_online; then
     echo "Server is not up. Attempting to wake it up."
     wake_up_server
   else
     echo "Server is already up!"
   fi
+}
+
+main() {
+
+  handle_ssh_tunnel_setup
+
+  check_and_wake_server
 
   establish_server_connection "${tunnel}" "${port}"
 
