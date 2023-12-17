@@ -9,19 +9,22 @@
 readonly INITIAL_WAIT_TIME=20
 readonly SUBSEQUENT_WAIT_TIME=5
 
-# Set variables from environment or use default values
-# these are both the same
-remote_user="${REMOTE_USER}" 
-server_user="${SERVER_USER}"
- 
-remote_host="${REMOTE_HOST}" # remote host is duck DNS RPi
-server_ip="${SERVER_IP}" # local IP of Manjaro server
+# Set variables from environment or default values
+tunnel="no"
+port=0
+
+jumphost_user="${REMOTE_USER}"  
+jumphost="${REMOTE_HOST}" # remote host is duck DNS RPi
+jump_connection="${jumphost_user}@${jumphost}"
+
+manjaro_user="${SERVER_USER}"
+manjaro_ip="${SERVER_IP}" # local IP of Manjaro server
+manjaro_connection="${manjaro_user}@${manjaro_ip}"
+
 mac_address="${MAC_ADDRESS}" # local Mac address of Manjaro server
-# jump_connection="${remote_user}@${remote_host}"
-server_connection="${server_user}@${server_ip}"
 
 is_server_online() {
-    if ssh -q "${remote_user}@${remote_host}" "ping -c 3 -W 3 $server_ip" >/dev/null 2>&1; then
+    if ssh -q "${jump_connection}" "ping -c 3 -W 3 $manjaro_ip" >/dev/null 2>&1; then
     return 0
   else
     return 1
@@ -39,14 +42,11 @@ is_yes_response() {
 
 wake_up_server() {
   echo "Sending Wake on LAN signal to server..."
-  ssh "${remote_user}@${remote_host}" "sudo etherwake -i eth0 ${mac_address}"
-
+  ssh "${jump_connection}" "sudo etherwake -i eth0 ${mac_address}"
   echo "Waiting for server to wake up..."
-
   sleep $INITIAL_WAIT_TIME
-
   while true; do
-    if ssh -q -o "ConnectTimeout=5" -o "StrictHostKeyChecking=no" "${server_connection}" "exit" 2>/dev/null; then
+    if ssh -q -o "ConnectTimeout=5" -o "StrictHostKeyChecking=no" "${manjaro_connection}" "exit" 2>/dev/null; then
       echo "Server is up!"
       break
     else
@@ -56,34 +56,15 @@ wake_up_server() {
   done
 }
 
-establish_server_connection() {
-  tunnel=$1
-  port=$2
-  if is_yes_response "$tunnel"; then
-    ssh -f -N -L $port:localhost:$port "${server_connection}"
-  else
-    echo "Connecting to Manjaro Linux server..."
-    ssh "${server_connection}"
-  fi
-}
-
 initiate_remote_shutdown() {
   echo "Initiating shutdown of the server..."
-  ssh -A -t "${server_connection}" "sudo shutdown now"
-}
-
-establish_ssh_tunnel() {
-  local tunnel=$1
-  local port=$2
-  if is_yes_response "$tunnel"; then
-    log_info "Creating SSH tunnel to remote jump host..."
-    ssh -f -N -L $port:localhost:$port "${remote_user}@${remote_host}"
-  fi
+  ssh -A -t "${manjaro_connection}" "sudo shutdown now"
 }
 
 prompt_tunnel_config() {
-  read -p "Would you like to tunnel? [y/N]: " tunnel
-  if is_yes_response "$tunnel"; then
+  read -p "Would you like to tunnel? [y/N]: " tunnel_response
+  if is_yes_response "$tunnel_response"; then
+    tunnel="yes"
     while true; do
       read -p "Specify the port to tunnel (default: 9090): " port
       port=${port:-9090}
@@ -93,18 +74,7 @@ prompt_tunnel_config() {
         break
       fi
     done
-  else
-    port=0
   fi
-  echo "$tunnel,$port"
-}
-
-handle_ssh_tunnel_setup() {
-  IFS=',' read -ra tunnel_and_port <<<"$(prompt_tunnel_config)"
-  tunnel="${tunnel_and_port[0]}"
-  port="${tunnel_and_port[1]}"
-
-  establish_ssh_tunnel "${tunnel}" "${port}"
 }
 
 check_and_wake_server() {
@@ -116,14 +86,17 @@ check_and_wake_server() {
   fi
 }
 
-main() {
+establish_manjaro_connection() {
+  prompt_tunnel_config
+  if is_yes_response "$tunnel"; then
+    ssh -f -N -L $port:localhost:$port "${manjaro_connection}"
+  else
+    echo "Connecting to Manjaro Linux server..."
+    ssh "${manjaro_connection}"
+  fi
+}
 
-  handle_ssh_tunnel_setup
-
-  check_and_wake_server
-
-  establish_server_connection "${tunnel}" "${port}"
-
+shutdown_server() {
   read -p "Do you want to shut down the server? (y/n): " shutdown_choice
   if is_yes_response "$shutdown_choice"; then
     echo "You may be prompted to enter the remote server's password for 'sudo' access."
@@ -131,12 +104,21 @@ main() {
   else
     echo "Not shutting down the server. Exiting."
   fi
+}
 
+kill_port_listener() {
   if is_yes_response "$tunnel"; then
     echo "Killing the process locally that is listening on port $port..."
     echo "Enter password for local machine:"
     sudo kill $(sudo lsof -t -i:$port)
   fi
+}
+
+main() {
+  check_and_wake_server
+  establish_manjaro_connection
+  shutdown_server
+  kill_port_listener
 }
 
 main
