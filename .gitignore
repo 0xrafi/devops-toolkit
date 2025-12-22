@@ -23,3 +23,16 @@ build/
 *.swp
 *.bak
 *.tmp
+
+# Secrets and credentials (NEVER COMMIT)
+.env
+.env.*
+!.env.template
+!.env.example
+*.gpg
+.secrets
+.secrets_cache
+secrets_cache
+*_credentials
+*_secret
+api_keys*
