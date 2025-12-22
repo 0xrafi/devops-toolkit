@@ -70,16 +70,16 @@ load_from_1password() {
 
     log_info "Loading secrets from 1Password..."
 
-    # Check if signed in
-    if ! op account get &> /dev/null; then
-        log_warn "Not signed in to 1Password. Run: eval \$(op signin)"
+    # Check if CLI is connected (with desktop app, no explicit signin needed)
+    if ! op vault list &> /dev/null; then
+        log_warn "Cannot connect to 1Password. Make sure the desktop app is running and CLI integration is enabled."
         return 1
     fi
 
-    # Load secrets (adjust these references to match your 1Password vault)
-    export OPENAI_API_KEY=$(op read "op://Personal/OpenAI/credential" 2>/dev/null || echo "")
-    export ANTHROPIC_API_KEY=$(op read "op://Personal/Anthropic/credential" 2>/dev/null || echo "")
-    export JOURNAL_KEY=$(op read "op://Personal/Journal/password" 2>/dev/null || echo "")
+    # Load secrets from 1Password items
+    export OPENAI_API_KEY=$(op item get "OpenAI API Key" --fields credential --reveal 2>/dev/null || echo "")
+    export ANTHROPIC_API_KEY=$(op item get "Anthropic API Key" --fields credential --reveal 2>/dev/null || echo "")
+    export JOURNAL_KEY=$(op item get "Journal Encryption Key" --fields credential --reveal 2>/dev/null || echo "")
 
     if [[ -n "$OPENAI_API_KEY" ]] || [[ -n "$ANTHROPIC_API_KEY" ]]; then
         log_info "Successfully loaded secrets from 1Password"
