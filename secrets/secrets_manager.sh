@@ -3,7 +3,8 @@
 # Supports multiple backends: 1Password CLI, Bitwarden CLI, or encrypted file
 
 # Use -e and -o pipefail, but not -u (causes issues when sourced)
-set -eo pipefail
+# DISABLED: set -e causes shell to exit when sourced and commands fail
+# set -eo pipefail
 
 # Configuration
 SECRETS_FILE="${HOME}/.secrets.gpg"
